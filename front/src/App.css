@@ -237,6 +237,7 @@
   cursor: pointer;
   transition: all 0.3s;
   text-align: center;
+  user-select: none;
 
   &:hover {
     border-color: var(--accent);
@@ -674,8 +675,6 @@
   .action-button {
     width: 100%;
   }
-}
-  padding: 40px 0;
 }
 
 .spinner {

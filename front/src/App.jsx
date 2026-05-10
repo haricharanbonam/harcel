@@ -162,13 +162,16 @@ function App() {
                       accept=".zip,.tar,.tar.gz,.html"
                       className="file-input"
                     />
-                    <div className={`file-upload-area ${file ? 'has-file' : ''}`}>
+                    <label 
+                      htmlFor="file-upload"
+                      className={`file-upload-area ${file ? 'has-file' : ''}`}
+                    >
                       <span className="upload-icon">📤</span>
                       <p className="upload-text">
                         {file ? file.name : 'Click to upload or drag and drop'}
                       </p>
                       <p className="upload-hint">.zip, .tar.gz, or .html files</p>
-                    </div>
+                    </label>
                   </div>
                 </div>
               )}
