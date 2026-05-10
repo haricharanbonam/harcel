@@ -8,7 +8,9 @@ function App() {
   const [file, setFile] = useState(null)
   const [loading, setLoading] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState('')
+  const [loadingStage, setLoadingStage] = useState(0)
   const [result, setResult] = useState(null)
+  const [copied, setCopied] = useState(false)
   const [error, setError] = useState('')
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL
@@ -38,25 +40,26 @@ function App() {
     }
 
     setLoading(true)
-    setLoadingMessage('Cloning...')
+    setLoadingStage(0)
+    setLoadingMessage('Initializing...')
     
     try {
       const formData = new FormData()
       
       if (deploymentType === 'github') {
-        formData.append('githubUrl', githubUrl)
+        formData.append('repoUrl', githubUrl)
+        formData.append('type', projectType)
       } else {
-        formData.append('file', file)
+        formData.append('site', file)
       }
-      
-      formData.append('projectType', projectType)
-      formData.append('deploymentType', deploymentType)
 
       // Simulate loading stages
-      setTimeout(() => setLoadingMessage('Building...'), 2000)
-      setTimeout(() => setLoadingMessage('Deploying...'), 4000)
+      setTimeout(() => { setLoadingStage(1); setLoadingMessage('Cloning repository...') }, 800)
+      setTimeout(() => { setLoadingStage(2); setLoadingMessage('Building project...') }, 2500)
+      setTimeout(() => { setLoadingStage(3); setLoadingMessage('Deploying...') }, 4200)
 
-      const response = await fetch(`${backendUrl}/deploy`, {
+      const endpoint = deploymentType === 'github' ? '/deploy/github' : '/deploy/file'
+      const response = await fetch(`${backendUrl}${endpoint}`, {
         method: 'POST',
         body: formData,
       })
@@ -66,10 +69,13 @@ function App() {
       }
 
       const data = await response.json()
-      setResult(data.url)
-      setFile(null)
-      setGithubUrl('')
-      setLoading(false)
+      setLoadingStage(4)
+      setTimeout(() => {
+        setResult(data.url || data.siteId)
+        setFile(null)
+        setGithubUrl('')
+        setLoading(false)
+      }, 800)
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.')
       setLoading(false)
@@ -78,6 +84,8 @@ function App() {
 
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(result)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   const handleOpenUrl = () => {
@@ -89,58 +97,79 @@ function App() {
     setError('')
     setGithubUrl('')
     setFile(null)
+    setLoadingStage(0)
   }
 
   return (
     <main className="deploy-container">
+      <div className="stars"></div>
       <div className="deploy-content">
-        <h1>Deploy your site</h1>
+        <div className="header-section">
+          <h1>🚀 Deploy your site</h1>
+          <p className="subtitle">Lightning-fast deployments from GitHub or upload</p>
+        </div>
         
         {!result ? (
           <form onSubmit={handleDeploy} className="deploy-form">
             {/* Deployment Type Tabs */}
-            <div className="tabs">
-              <button
-                type="button"
-                className={`tab ${deploymentType === 'github' ? 'active' : ''}`}
-                onClick={() => setDeploymentType('github')}
-              >
-                GitHub URL
-              </button>
-              <button
-                type="button"
-                className={`tab ${deploymentType === 'file' ? 'active' : ''}`}
-                onClick={() => setDeploymentType('file')}
-              >
-                Upload File
-              </button>
+            <div className="tabs-container">
+              <div className="tabs">
+                <button
+                  type="button"
+                  className={`tab ${deploymentType === 'github' ? 'active' : ''}`}
+                  onClick={() => setDeploymentType('github')}
+                >
+                  <span className="tab-icon">🐙</span>
+                  GitHub
+                </button>
+                <button
+                  type="button"
+                  className={`tab ${deploymentType === 'file' ? 'active' : ''}`}
+                  onClick={() => setDeploymentType('file')}
+                >
+                  <span className="tab-icon">📁</span>
+                  Upload
+                </button>
+              </div>
             </div>
 
             {/* Input Section */}
             <div className="input-section">
               {deploymentType === 'github' ? (
-                <div>
+                <div className="input-group">
                   <label htmlFor="github-url">GitHub Repository URL</label>
-                  <input
-                    id="github-url"
-                    type="url"
-                    placeholder="https://github.com/username/repository"
-                    value={githubUrl}
-                    onChange={handleGithubUrlChange}
-                    disabled={loading}
-                  />
+                  <div className="input-wrapper">
+                    <span className="input-icon">🔗</span>
+                    <input
+                      id="github-url"
+                      type="url"
+                      placeholder="https://github.com/username/repository"
+                      value={githubUrl}
+                      onChange={handleGithubUrlChange}
+                      disabled={loading}
+                    />
+                  </div>
                 </div>
               ) : (
-                <div>
-                  <label htmlFor="file-upload">Upload your project file</label>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    onChange={handleFileChange}
-                    disabled={loading}
-                    accept=".zip,.tar,.tar.gz"
-                  />
-                  {file && <p className="file-name">Selected: {file.name}</p>}
+                <div className="input-group">
+                  <label htmlFor="file-upload">Upload your project</label>
+                  <div className="file-upload-wrapper">
+                    <input
+                      id="file-upload"
+                      type="file"
+                      onChange={handleFileChange}
+                      disabled={loading}
+                      accept=".zip,.tar,.tar.gz,.html"
+                      className="file-input"
+                    />
+                    <div className={`file-upload-area ${file ? 'has-file' : ''}`}>
+                      <span className="upload-icon">📤</span>
+                      <p className="upload-text">
+                        {file ? file.name : 'Click to upload or drag and drop'}
+                      </p>
+                      <p className="upload-hint">.zip, .tar.gz, or .html files</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -148,36 +177,58 @@ function App() {
             {/* Project Type Dropdown */}
             <div className="form-group">
               <label htmlFor="project-type">Project Type</label>
-              <select
-                id="project-type"
-                value={projectType}
-                onChange={(e) => setProjectType(e.target.value)}
-                disabled={loading}
-              >
-                <option value="html">HTML</option>
-                <option value="react-vite">React (Vite)</option>
-              </select>
+              <div className="select-wrapper">
+                <span className="select-icon">⚙️</span>
+                <select
+                  id="project-type"
+                  value={projectType}
+                  onChange={(e) => setProjectType(e.target.value)}
+                  disabled={loading}
+                >
+                  <option value="html">📄 HTML</option>
+                  <option value="react">⚛️ React</option>
+                </select>
+              </div>
             </div>
 
             {/* Error Message */}
-            {error && <p className="error-message">{error}</p>}
+            {error && (
+              <div className="error-message">
+                <span className="error-icon">❌</span>
+                {error}
+              </div>
+            )}
 
             {/* Loading State */}
             {loading ? (
               <div className="loading-state">
-                <div className="spinner"></div>
-                <p>{loadingMessage}</p>
+                <div className="loader">
+                  <div className="stage" style={{ '--stage': 1 }}></div>
+                  <div className="stage" style={{ '--stage': 2 }}></div>
+                  <div className="stage" style={{ '--stage': 3 }}></div>
+                  <div className="stage" style={{ '--stage': 4 }}></div>
+                </div>
+                <p className="loading-message">{loadingMessage}</p>
+                <div className="stage-indicator">
+                  {['Init', 'Clone', 'Build', 'Deploy', 'Done'].map((stage, idx) => (
+                    <div key={idx} className={`stage-dot ${idx <= loadingStage ? 'active' : ''}`}></div>
+                  ))}
+                </div>
               </div>
             ) : (
               <button type="submit" className="deploy-button">
-                Deploy
+                <span className="button-glow"></span>
+                <span className="button-text">🚀 Deploy Now</span>
               </button>
             )}
           </form>
         ) : (
           <div className="success-section">
-            <div className="success-icon">✓</div>
-            <p className="success-message">Your site has been deployed!</p>
+            <div className="success-animation">
+              <div className="success-icon">✨</div>
+            </div>
+            <h2 className="success-message">Deployment Successful!</h2>
+            <p className="success-subtext">Your site is now live and ready to share</p>
             
             <div className="url-section">
               <p className="url-label">Your deployment URL:</p>
@@ -191,10 +242,10 @@ function App() {
                 <button
                   type="button"
                   onClick={handleCopyUrl}
-                  className="action-button copy-button"
+                  className={`action-button copy-button ${copied ? 'copied' : ''}`}
                   title="Copy URL"
                 >
-                  📋 Copy
+                  {copied ? '✅ Copied!' : '📋 Copy'}
                 </button>
                 <button
                   type="button"
@@ -212,80 +263,12 @@ function App() {
               onClick={handleNewDeployment}
               className="new-deploy-button"
             >
-              Deploy Another Site
+              + Deploy Another Site
             </button>
           </div>
         )}
       </div>
     </main>
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
   )
 }
 
