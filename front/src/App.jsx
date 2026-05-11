@@ -71,7 +71,8 @@ function App() {
       const data = await response.json()
       setLoadingStage(4)
       setTimeout(() => {
-        setResult(data.url || data.siteId)
+        const path = data.url.split("/")[3];
+        setResult(`${backendUrl}/${path}`);
         setFile(null)
         setGithubUrl('')
         setLoading(false)
