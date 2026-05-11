@@ -34,7 +34,8 @@ const deployFile = async (req, res) => {
     fs.mkdirSync(siteDir, { recursive: true });
 
     // Move uploaded file → index.html
-    fs.renameSync(req.file.path, path.join(siteDir, "index.html"));
+  fs.copyFileSync(req.file.path, path.join(siteDir, "index.html"));
+fs.unlinkSync(req.file.path); 
 
     return res.json({
       success: true,
