@@ -90,7 +90,7 @@ function App() {
       const data = await response.json()
       const siteId = data.siteId
       if (!siteId) {
-        throw new Error('Deployment response is missing site ID. Please try again.')
+        throw new Error('Deployment response is missing site ID. Please contact support.')
       }
 
       setLoadingStage(4)
