@@ -31,7 +31,7 @@ function App() {
   }
 
   const handleGithubUrlChange = (e) => {
-    setGithubUrl(e.target.value)
+    setGithubUrl(e.target.value.trim())
     setError('')
   }
 
@@ -80,14 +80,17 @@ function App() {
       }
 
       if (!response.ok) {
-        const errorBody = await response.json().catch(() => null)
+        const responseType = response.headers.get('content-type') || ''
+        const errorBody = responseType.includes('application/json')
+          ? await response.json().catch(() => null)
+          : null
         throw new Error(errorBody?.detail || errorBody?.error || 'Deployment failed')
       }
 
       const data = await response.json()
       const siteId = data.siteId
       if (!siteId) {
-        throw new Error('Deployment succeeded but site ID was missing in response')
+        throw new Error('Deployment succeeded but site ID was missing in response. Please try again.')
       }
 
       setLoadingStage(4)
