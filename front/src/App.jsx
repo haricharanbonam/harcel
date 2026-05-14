@@ -31,7 +31,7 @@ function App() {
   }
 
   const handleGithubUrlChange = (e) => {
-    setGithubUrl(e.target.value.trim())
+    setGithubUrl(e.target.value)
     setError('')
   }
 
@@ -90,7 +90,7 @@ function App() {
       const data = await response.json()
       const siteId = data.siteId
       if (!siteId) {
-        throw new Error('Deployment succeeded but site ID was missing in response. Please try again.')
+        throw new Error('Deployment response is missing site ID. Please try again.')
       }
 
       setLoadingStage(4)
