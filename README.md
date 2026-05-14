@@ -20,7 +20,7 @@ Harcel is a lightweight deployment platform that lets you publish static project
 harcel/
 ├── front/                 # React + Vite frontend
 │   ├── src/App.jsx        # Main deployment UI
-│   └── .env.example       # VITE_BACKEND_URL
+│   └── .env.example       # Frontend URL env vars
 ├── back/                  # Express backend
 │   ├── server.js          # API entrypoint
 │   ├── routes/deploy.js   # Deployment routes
@@ -64,6 +64,8 @@ Recommended values:
   - `BASE_URL=http://localhost:3000`
 - `front/.env`
   - `VITE_BACKEND_URL=http://localhost:3000`
+  - `VITE_DEPLOYMENT_DOMAIN_SUFFIX=.haricharanbonam.tech`
+  - `VITE_DEPLOYMENT_URL_PROTOCOL=http`
 
 ### 3) Run the app
 

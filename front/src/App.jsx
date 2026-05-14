@@ -14,6 +14,16 @@ function App() {
   const [error, setError] = useState('')
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL
+  const deploymentDomainSuffix = import.meta.env.VITE_DEPLOYMENT_DOMAIN_SUFFIX || '.haricharanbonam.tech'
+  const deploymentUrlProtocol = import.meta.env.VITE_DEPLOYMENT_URL_PROTOCOL || 'http'
+
+  const buildDeploymentUrl = (siteId) => {
+    const normalizedSuffix = deploymentDomainSuffix.startsWith('.')
+      ? deploymentDomainSuffix
+      : `.${deploymentDomainSuffix}`
+
+    return `${deploymentUrlProtocol}://${siteId}${normalizedSuffix}/`
+  }
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0])
@@ -44,35 +54,48 @@ function App() {
     setLoadingMessage('Initializing...')
     
     try {
-      const formData = new FormData()
-      
-      if (deploymentType === 'github') {
-        formData.append('repoUrl', githubUrl)
-        formData.append('type', projectType)
-      } else {
-        formData.append('site', file)
-      }
-
       // Simulate loading stages
       setTimeout(() => { setLoadingStage(1); setLoadingMessage('Cloning repository...') }, 800)
       setTimeout(() => { setLoadingStage(2); setLoadingMessage('Building project...') }, 2500)
       setTimeout(() => { setLoadingStage(3); setLoadingMessage('Deploying...') }, 4200)
 
-      const endpoint = deploymentType === 'github' ? '/deploy/github' : '/deploy/file'
-      const response = await fetch(`${backendUrl}${endpoint}`, {
-        method: 'POST',
-        body: formData,
-      })
+      let response
+      if (deploymentType === 'github') {
+        response = await fetch(`${backendUrl}/deploy/github`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            repoUrl: githubUrl.trim(),
+            type: projectType,
+          }),
+        })
+      } else {
+        const formData = new FormData()
+        formData.append('site', file)
+
+        response = await fetch(`${backendUrl}/deploy/file`, {
+          method: 'POST',
+          body: formData,
+        })
+      }
 
       if (!response.ok) {
-        throw new Error('Deployment failed')
+        const responseType = response.headers.get('content-type') || ''
+        const errorBody = responseType.includes('application/json')
+          ? await response.json().catch(() => null)
+          : null
+        throw new Error(errorBody?.detail || errorBody?.error || 'Deployment failed')
       }
 
       const data = await response.json()
+      const siteId = data.siteId
+      if (!siteId) {
+        throw new Error('Deployment response is missing site ID. Please contact support.')
+      }
+
       setLoadingStage(4)
       setTimeout(() => {
-        const path = data.url.split("/")[3];
-        setResult(`${backendUrl}/${path}`);
+        setResult(buildDeploymentUrl(siteId))
         setFile(null)
         setGithubUrl('')
         setLoading(false)
