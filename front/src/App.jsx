@@ -15,7 +15,7 @@ function App() {
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL
   const deploymentDomainSuffix = import.meta.env.VITE_DEPLOYMENT_DOMAIN_SUFFIX || '.haricharanbonam.tech'
-  const deploymentUrlProtocol = import.meta.env.VITE_DEPLOYED_URL_PROTOCOL || 'http'
+  const deploymentUrlProtocol = import.meta.env.VITE_DEPLOYMENT_URL_PROTOCOL || 'http'
 
   const buildDeploymentUrl = (siteId) => {
     const normalizedSuffix = deploymentDomainSuffix.startsWith('.')
@@ -85,7 +85,7 @@ function App() {
       }
 
       const data = await response.json()
-      const siteId = data.siteId || data.url?.split('/')[3]
+      const siteId = data.siteId
       if (!siteId) {
         throw new Error('Deployment succeeded but site ID was missing in response')
       }

@@ -65,7 +65,7 @@ Recommended values:
 - `front/.env`
   - `VITE_BACKEND_URL=http://localhost:3000`
   - `VITE_DEPLOYMENT_DOMAIN_SUFFIX=.haricharanbonam.tech`
-  - `VITE_DEPLOYED_URL_PROTOCOL=http`
+  - `VITE_DEPLOYMENT_URL_PROTOCOL=http`
 
 ### 3) Run the app
 
